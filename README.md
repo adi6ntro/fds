@@ -20,35 +20,10 @@ $ pip install -r requirements.txt
 
 ## Usage
 
-Setting the `FLASK_APP` environment variable
+Setting your environment variable on `.flaskenv` file
+Then, run your apps:
 
 ```bash
-# use set instead of export if you are using windows
-(venv) $ export FLASK_APP=app.py
-(venv) $ export FLASK_ENV=development
-```
-
-Finally, run the apps
-
-```bash
-(venv) $ flask run
- * Serving Flask app "app.py"
- * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
-```
-
-## Simplify
-
-Once venv folder created. Make an .flaskenv or .env file of this:
-
-```bash
-FLASK_APP=app.py
-FLASK_ENV=development
-```
-
-Then, you will be simply run by this:
-
-```bash
-$ source venv/bin/activate
 (venv) $ flask run
  * Serving Flask app "app.py"
  * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
