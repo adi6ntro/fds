@@ -1,18 +1,29 @@
 from flask import render_template, flash, redirect, url_for, request, jsonify, make_response
-from app import app, mail, db
+from app import app, db
 from app.models import Log, LogSchema, User
 from flask_mail import Message
 from flask_login import current_user, login_user, logout_user, login_required
 from app.forms import LoginForm, RegistrationForm
 from werkzeug.urls import url_parse
+from datetime import datetime
+from app.email import send_report_email
 
 @app.route('/')
 @app.route('/index')
 @app.route('/home')
 @login_required
 def index():
-    get_logs = Log.query.order_by(Log.id_trans.desc()).all()
-    return render_template('index.html', title='Home', logs=get_logs)
+    get_logs = Log.query.order_by(Log.id_trans.desc())
+    page = request.args.get('page', 1, type=int)
+    posts = get_logs.paginate(
+        page, app.config['POSTS_PER_PAGE'], False)
+    next_url = url_for('index', page=posts.next_num) \
+        if posts.has_next else None
+    prev_url = url_for('index', page=posts.prev_num) \
+        if posts.has_prev else None
+
+    return render_template('index.html', title='Home', logs=posts.items, 
+                           next_url=next_url, prev_url=prev_url)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -69,10 +80,17 @@ def create_product():
     logs = log_schema.load(data)
     result = log_schema.dump(logs.create())
     if data["is_fraud"] == "1":
-        msg = Message('Fraud Detection Warning', recipients=["adi.guntoro@ottodigital.id"])
+        subject = 'Fraud Detection Warning' 
+        recipients=["adi.guntoro@ottodigital.id"]
         # msg = Message('Fraud Detection Warning', recipients=["aoi.soichiro@gmail.com"],
         #         cc=["endang.fiansyah@@ottodigital.id"], bcc=["adi.guntoro@ottodigital.id"])
-        msg.body = (data["body_email"])
-        msg.html = (data["body_email"])
-        mail.send(msg)
+        text_body = data["body_email"]
+        html_body = data["body_email"]
+        send_report_email(subject,recipients,text_body,html_body)
     return make_response(jsonify({"log": result}),200)
+
+@app.before_request
+def before_request():
+    if current_user.is_authenticated:
+        current_user.last_seen = datetime.utcnow()
+        db.session.commit()

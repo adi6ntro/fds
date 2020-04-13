@@ -1,41 +1,55 @@
 {% extends "base.html" %}
-{% include 'header.html' %}
+{% import 'bootstrap/wtf.html' as wtf %}
 
-{% block content %}
-    <h1>Hi, {{ current_user.username }}!</h1>
-    <div class="container">
-        <div class="row">
-            <div class="col md-12">
-                <div class="jumbotron p-3">
-                    <table class="table table-hover table-striped">
-                        <tr>
-                            <th>ID Trans</th>
-                            <th>Amount</th>
-                            <th>Date</th>
-                            <th>Time</th>
-                            <th>Source</th>
-                            <th>Destination</th>
-                            <th>Fraud</th>
-                            <th>Fraud Type</th>
-                            <th>IP Address</th>
-                            <th>Transaction Type</th>
-                        </tr>
-                        {% for row in logs %}
-                        <tr>
-                            <td>{{row.id_trans}}</td>
-                            <td>{{row.amount}}</td>
-                            <td>{{row.date}}</td>
-                            <td>{{row.time}}</td>
-                            <td>{{row.source}}</td>
-                            <td>{{row.destination}}</td>
-                            <td>{% if row.is_fraud == 1 %}Fraud{% else %}Not Fraud{% endif %}</td>
-                            <td>{{row.fraud_type}}</td>
-                            <td>{{row.ip_address}}</td>
-                            <td>{{row.transaction_type}}</td>
-                        </tr>
-                        {% endfor %}
-                    </table>
+{% block app_content %}
+    <div class="row">
+        <div class="col md-12">
+            <div class="jumbotron p-3">
+                <div class="well text-center">
+                    <h3>Log of Data Transaction</h3>
                 </div>
+                <table class="table table-hover table-striped">
+                    <tr>
+                        <th>ID Trans</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Source</th>
+                        <th>Destination</th>
+                        <th>Fraud</th>
+                        <th>Fraud Type</th>
+                        <th>IP Address</th>
+                        <th>Transaction Type</th>
+                    </tr>
+                    {% for row in logs %}
+                    <tr>
+                        <td>{{row.id_trans}}</td>
+                        <td>{{row.amount}}</td>
+                        <td>{{row.date}}</td>
+                        <td>{{row.time}}</td>
+                        <td>{{row.source}}</td>
+                        <td>{{row.destination}}</td>
+                        <td>{% if row.is_fraud == 1 %}Fraud{% else %}Not Fraud{% endif %}</td>
+                        <td>{{row.fraud_type}}</td>
+                        <td>{{row.ip_address}}</td>
+                        <td>{{row.transaction_type}}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+                <nav aria-label="...">
+                    <ul class="pager">
+                        <li class="previous{% if not prev_url %} disabled{% endif %}">
+                            <a href="{{ prev_url or '#' }}">
+                                <span aria-hidden="true">&larr;</span> Newer posts
+                            </a>
+                        </li>
+                        <li class="next{% if not next_url %} disabled{% endif %}">
+                            <a href="{{ next_url or '#' }}">
+                                Older posts <span aria-hidden="true">&rarr;</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
             </div>
         </div>
     </div>

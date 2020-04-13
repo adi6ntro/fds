@@ -38,4 +38,4 @@ nosetests.xml
 
 venv
 app.db
-microblog.log*
+bug_error.log*
