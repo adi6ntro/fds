@@ -1,4 +1,4 @@
-from flask import render_template, flash, redirect, url_for, request, jsonify, make_response
+from flask import render_template, flash, redirect, url_for, request, jsonify, make_response, send_from_directory
 from app import app, db
 from app.models import Log, LogSchema, User
 from flask_mail import Message
@@ -7,6 +7,7 @@ from app.forms import LoginForm, RegistrationForm
 from werkzeug.urls import url_parse
 from datetime import datetime
 from app.email import send_report_email
+import os 
 
 @app.route('/')
 @app.route('/index')
@@ -17,13 +18,11 @@ def index():
     page = request.args.get('page', 1, type=int)
     posts = get_logs.paginate(
         page, app.config['POSTS_PER_PAGE'], False)
-    next_url = url_for('index', page=posts.next_num) \
-        if posts.has_next else None
-    prev_url = url_for('index', page=posts.prev_num) \
-        if posts.has_prev else None
+    return render_template('index.html', title='Home', logs=posts.items)
 
-    return render_template('index.html', title='Home', logs=posts.items, 
-                           next_url=next_url, prev_url=prev_url)
+@app.route('/favicon.ico') 
+def favicon(): 
+    return send_from_directory(os.path.join(app.root_path, 'static'), 'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -74,7 +73,7 @@ def get_log_by_id(id):
     logs = log_schema.dump(get_logs)
     return make_response(jsonify({"log": logs}))
 @app.route('/api/logs', methods = ['POST'])
-def create_product():
+def insert_log():
     data = request.get_json()
     log_schema = LogSchema()
     logs = log_schema.load(data)
@@ -94,3 +93,86 @@ def before_request():
     if current_user.is_authenticated:
         current_user.last_seen = datetime.utcnow()
         db.session.commit()
+
+@app.route('/search/logs', methods = ['POST'])
+def search_log():
+    get_logs = Log.query
+    page = int(request.form['page']) if request.form['page'] else 1
+
+    amount = request.form["amount"]
+    search_amount = "%{}%".format(amount)
+    date = request.form["date"]
+    search_date = "%{}%".format(date)
+    time = request.form["time"]
+    search_time = "%{}%".format(time)
+    source = request.form["source"]
+    search_source = "%{}%".format(source)
+    destination = request.form["destination"]
+    search_destination = "%{}%".format(destination)
+    is_fraud = request.form["is_fraud"]
+    a = ['n', 'o', 't', 'N', 'O', 'T', ' ']
+    fraud = 0 if any(x in is_fraud for x in a) else 1
+    search_is_fraud = "%{}%".format(fraud)
+    fraud_type = request.form["fraud_type"]
+    search_fraud_type = "%{}%".format(fraud_type)
+    ip_address = request.form["ip_address"]
+    search_ip_address = "%{}%".format(ip_address)
+    transaction_type = request.form["transaction_type"]
+    search_transaction_type = "%{}%".format(transaction_type)
+
+    if amount:
+        get_logs = get_logs.filter(Log.amount.like(search_amount))
+    if date:
+        get_logs = get_logs.filter(Log.date.like(search_date))
+    if time:
+        get_logs = get_logs.filter(Log.time.like(search_time))
+    if source:
+        get_logs = get_logs.filter(Log.source.like(search_source))
+    if destination:
+        get_logs = get_logs.filter(Log.destination.like(search_destination))
+    if is_fraud:
+        get_logs = get_logs.filter(Log.is_fraud.like(search_is_fraud))
+    if fraud_type:
+        get_logs = get_logs.filter(Log.fraud_type.like(search_fraud_type))
+    if ip_address:
+        get_logs = get_logs.filter(Log.ip_address.like(search_ip_address))
+    if transaction_type:
+        get_logs = get_logs.filter(Log.transaction_type.like(search_transaction_type))
+    
+    get_logs = get_logs.order_by(Log.id_trans.desc())
+    posts = get_logs.paginate(
+        page, app.config['POSTS_PER_PAGE'], False)
+    tr_log = ''
+    for row in posts.items:
+        tr_row = '''<tr>
+                        <td>{0}</td>
+                        <td>{1}</td>
+                        <td>{2}</td>
+                        <td>{3}</td>
+                        <td>{4}</td>
+                        <td>{5}</td>
+                        <td>{6}</td>
+                        <td>{7}</td>
+                        <td>{8}</td>
+                        <td>{9}</td>
+                    </tr>'''
+        fraud = 'Fraud' if row.is_fraud == 1 else 'Not Fraud'
+        tr_log = tr_log + tr_row.format(row.id_trans, row.amount, row.date, row.time, row.source,
+                        row.destination, fraud, row.fraud_type, row.ip_address, row.transaction_type)
+
+    next_page = posts.next_num if posts.has_next else '#'
+    if next_page != '#':
+        str_next_url = '<a onclick="search_log(\''+str(next_page)+'\')">'
+    else:
+        str_next_url = '''<a>'''
+    str_next_url = str_next_url + '''Older <span aria-hidden="true">&rarr;</span></a>'''
+
+    prev_page = posts.prev_num if posts.has_prev else '#'
+    if prev_page != '#':
+        str_prev_url = '<a onclick="search_log(\''+str(prev_page)+'\')">'
+    else:
+        str_prev_url = '''<a>'''
+    str_prev_url = str_prev_url + '''<span aria-hidden="true">&larr;</span> Newer</a>'''
+
+    return jsonify({'str_next_url': str_next_url, 'str_prev_url': str_prev_url,
+                    'next_page': next_page, 'prev_page': prev_page, 'tr_log': tr_log})
