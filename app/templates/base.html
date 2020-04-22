@@ -45,7 +45,6 @@
     </div>
 {% endblock %}
 
-
 {% block scripts %}
     {{ super() }}
     {{ moment.include_moment() }}
@@ -53,17 +52,21 @@
         function search_log(page = '') {
             $.post('/search/logs', {
                 page: page,
-                amount: $('#amount').val(),
-                date: $('#date').val(),
-                time: $('#time').val(),
+                id_trans: $('#id_trans').val(),
+                date_time: $('#date-time').val(),
+                company_id: $('#company_id').val(),
                 source: $('#source').val(),
                 destination: $('#destination').val(),
-                is_fraud: $('#is_fraud').val(),
-                fraud_type: $('#fraud_type').val(),
+                amount: $('#amount').val(),
+                trans_type: $('#trans_type').val(),
+                product_id: $('#product_id').val(),
                 ip_address: $('#ip_address').val(),
-                transaction_type: $('#transaction_type').val()
+                ip_location: $('#ip_location').val(),
+                longlat: $('#longlat').val(),
+                geo_location: $('#geo_location').val(),
+                fraud_type: $('#fraud_type').val(),
+                fraud_point: $('#fraud_point').val()
             }).done(function(response) {
-                console.log(response['tr_log']);
                 $("#table_log > tbody").empty();
                 $('#next').html(response['str_next_url']);
                 $('#previous').html(response['str_prev_url']);
@@ -85,5 +88,45 @@
                 $('#err_alert').text("Error: Could not contact server.");
             });
         }
+        $( document ).ready(function () {
+            var timer = null;
+            var xhr = null;
+            $("#tr_log").on('mouseenter', '.log_popup', function( event ) {
+                // mouse in event handler
+                var elem = $(event.currentTarget);
+                timer = setTimeout(function() {
+                    timer = null;
+                    xhr = $.ajax(
+                        '/log/' + elem.children().eq(1).text().trim() + '/popup').done(
+                            function(data) {
+                                xhr = null;
+                                elem.popover({
+                                    trigger: 'manual',
+                                    html: true,
+                                    animation: false,
+                                    container: 'body',
+                                    content: data,
+                                    template: '<div class="popover popover-medium"><div class="arrow"></div><div class="popover-inner"><h3 class="popover-title"></h3><div class="popover-content"><p></p></div></div></div>'
+                                }).popover('show');
+                                flask_moment_render_all();
+                            }
+                        );
+                }, 1000);
+            }).on('mouseleave', '.log_popup', function( event ) {
+                // mouse out event handler
+                var elem = $(event.currentTarget);
+                if (timer) {
+                    clearTimeout(timer);
+                    timer = null;
+                }
+                else if (xhr) {
+                    xhr.abort();
+                    xhr = null;
+                }
+                else {
+                    elem.popover('destroy');
+                }
+            });
+        });
     </script>
 {% endblock %}

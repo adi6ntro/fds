@@ -2,57 +2,90 @@
 {% import 'bootstrap/wtf.html' as wtf %}
 
 {% block app_content %}
+    <style>
+        .popover{
+            max-width: 750px!important;
+            width:auto;
+        }
+        table#table_log th {
+            text-align: center;
+        }
+    </style>
+    
     <div class="row">
         <div class="col md-12">
-            <div class="jumbotron p-3">
-                <div class="well text-center">
-                    <h3>Log of Data Transaction</h3>
+            <div class="jumbotron p-3" style="padding: 20px;">
+                <div class="well text-center" style="padding: 0px;margin-bottom: 0px;">
+                    <h3 style="margin-top: 10px;">Log Fraud Transaction</h3>
                 </div>
                 <span id="err_alert"></span>
-                <table id="table_log" class="table table-hover table-striped">
-                    <thead>
-                        <tr>
-                            <th>ID Trans</th>
-                            <th>Amount</th>
-                            <th>Date</th>
-                            <th>Time</th>
-                            <th>Source</th>
-                            <th>Destination</th>
-                            <th>Fraud</th>
-                            <th>Fraud Type</th>
-                            <th>IP Address</th>
-                            <th>Transaction Type</th>
-                        </tr>
-                        <tr>
-                            <th></th>
-                            <th><input class="form-control" id="amount" name="amount" type="text" onkeyup="search_log()"></th>
-                            <th><input class="form-control" id="date" name="date" type="text" onkeyup="search_log()"></th>
-                            <th><input class="form-control" id="time" name="time" type="text" onkeyup="search_log()"></th>
-                            <th><input class="form-control" id="source" name="source" type="text" onkeyup="search_log()"></th>
-                            <th><input class="form-control" id="destination" name="destination" type="text" onkeyup="search_log()"></th>
-                            <th><input class="form-control" id="is_fraud" name="is_fraud" type="text" onkeyup="search_log()"></th>
-                            <th><input class="form-control" id="fraud_type" name="fraud_type" type="text" onkeyup="search_log()"></th>
-                            <th><input class="form-control" id="ip_address" name="ip_address" type="text" onkeyup="search_log()"></th>
-                            <th><input class="form-control" id="transaction_type" name="transaction_type" type="text" onkeyup="search_log()"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="tr_log">
-                        {% for row in logs %}
-                        <tr>
-                            <td>{{row.id_trans}}</td>
-                            <td>{{row.amount}}</td>
-                            <td>{{row.date}}</td>
-                            <td>{{row.time}}</td>
-                            <td>{{row.source}}</td>
-                            <td>{{row.destination}}</td>
-                            <td>{% if row.is_fraud == 1 %}Fraud{% else %}Not Fraud{% endif %}</td>
-                            <td>{{row.fraud_type}}</td>
-                            <td>{{row.ip_address}}</td>
-                            <td>{{row.transaction_type}}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div style="overflow:auto;">
+                    <table id="table_log" class="table table-hover table-striped">
+                        <thead>
+                            <tr>
+                                <th colspan="4">Transaction Info</th>
+                                <th colspan="4">Receiver</th>
+                                <th colspan="4">Location</th>
+                                <th colspan="2">Fraud Status</th>
+                            </tr>
+                            <tr>
+                                <th style="min-width: 100px;">ID Trans</th>
+                                <th style="min-width: 100px;">Datetime</th>
+                                <th style="min-width: 150px;">Company ID</th>
+                                <th style="min-width: 150px;">Sender ID</th>
+                                <th style="min-width: 150px;">Receiver ID</th>
+                                <th style="min-width: 150px;">Amount</th>
+                                <th style="min-width: 150px;">Trans Type</th>
+                                <th style="min-width: 150px;">Product ID</th>
+                                <th style="min-width: 150px;">IP Address</th>
+                                <th style="min-width: 150px;">IP Location</th>
+                                <th style="min-width: 150px;">Long, Lat</th>
+                                <th style="min-width: 150px;">Geo Location</th>
+                                <th style="min-width: 100px;">Type</th>
+                                <th style="min-width: 100px;">Point</th>
+                            </tr>
+                            <tr>
+                                <th><input class="form-control" id="id_trans" name="id_trans" type="text" onkeyup="search_log()"></th>
+                                <th><input class="form-control" id="date-time" name="date-time" type="text" onkeyup="search_log()"></th>
+                                <th><input class="form-control" id="company_id" name="company_id" type="text" onkeyup="search_log()"></th>
+                                <th><input class="form-control" id="source" name="source" type="text" onkeyup="search_log()"></th>
+                                <th><input class="form-control" id="destination" name="destination" type="text" onkeyup="search_log()"></th>
+                                <th><input class="form-control" id="amount" name="amount" type="text" onkeyup="search_log()"></th>
+                                <th><input class="form-control" id="trans_type" name="trans_type" type="text" onkeyup="search_log()"></th>
+                                <th><input class="form-control" id="product_id" name="product_id" type="text" onkeyup="search_log()"></th>
+                                <th><input class="form-control" id="ip_address" name="ip_address" type="text" onkeyup="search_log()"></th>
+                                <th><input class="form-control" id="ip_location" name="ip_location" type="text" onkeyup="search_log()"></th>
+                                <th><input class="form-control" id="longlat" name="longlat" type="text" onkeyup="search_log()"></th>
+                                <th><input class="form-control" id="geo_location" name="geo_location" type="text" onkeyup="search_log()"></th>
+                                <th><input class="form-control" id="fraud_type" name="fraud_type" type="text" onkeyup="search_log()"></th>
+                                <th><input class="form-control" id="fraud_point" name="fraud_point" type="text" onkeyup="search_log()"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tr_log">
+                            {% for row in logs %}
+                            <tr>
+                                <td class="log_popup" style="cursor: pointer;">
+                                    <span>{{row.id_trans}}</span>
+                                    <span style="display: none;">{{row.id}}</span>
+                                </td>
+                                <td>{{row.date}} {{row.time}}</td>
+                                <td>{{row.company_id}}</td>
+                                <td>{{row.source}}</td>
+                                <td>{{row.destination}}</td>
+                                <td>{{row.amount}}</td>
+                                <td>{{row.trans_type}}</td>
+                                <td>{{row.product_id}}</td>
+                                <td>{{row.ip_address}}</td>
+                                <td>{{row.ip_city}}, {{row.ip_country}}</td>
+                                <td>{{row.longitude}}, {{row.latitude}}</td>
+                                <td>{{row.geo_city}}, {{row.geo_state}}, {{row.geo_country}}</td>
+                                <td>{{row.fraud_type}}</td>
+                                <td>{{row.fraud_point}}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
                 <nav aria-label="...">
                     <ul class="pager">
                         <li id="previous" class="previous disabled">

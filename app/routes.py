@@ -8,6 +8,11 @@ from werkzeug.urls import url_parse
 from datetime import datetime
 from app.email import send_report_email
 import os 
+from bs4 import BeautifulSoup
+import geoip2.database
+from geoip2.errors import AddressNotFoundError
+from geopy.geocoders import Nominatim
+from sqlalchemy import func
 
 @app.route('/')
 @app.route('/index')
@@ -74,11 +79,43 @@ def get_log_by_id(id):
     return make_response(jsonify({"log": logs}))
 @app.route('/api/logs', methods = ['POST'])
 def insert_log():
-    data = request.get_json()
     log_schema = LogSchema()
+    data = request.get_json()
+
+    soup = BeautifulSoup(data["body_email"],'html.parser')
+    title = soup.findAll('span',{"id" : "title"})
+    for link in title:
+        data['fraud_type'] = "POTENTIAL FRAUD" \
+            if "POTENTIAL" in link.findAll(text=True)[0] else "FRAUD"
+    cause = soup.findAll('span',{"id" : "cause"})
+    data['fraud_cause'] = ''
+    for link in cause:
+        data['fraud_cause'] = data['fraud_cause'] + link.findAll(text=True)[0] + '<br>'
+    point = soup.findAll('span',{"id" : "point"})
+    for link in point:
+        data['fraud_point'] = link.findAll(text=True)[0]
+
+    #geolocation
+    geolocator = Nominatim(user_agent="fds-v1")
+    location = geolocator.reverse("%s, %s"%(data['longitude'],data['latitude']))
+    address = location.raw['address']
+    data['geo_city'] = address.get('city', '')
+    data['geo_state'] = address.get('state', '')
+    data['geo_country'] = address.get('country', '')
+    
+    #ip location
+    reader = geoip2.database.Reader('GeoLite2-City.mmdb')
+    try:
+        response = reader.city(data['ip_address'])
+        data['ip_city'] = response.city.name
+        data['ip_country'] = response.country.name
+    except AddressNotFoundError:
+        data['ip_city'] = None
+        data['ip_country'] = None
+
     logs = log_schema.load(data)
     result = log_schema.dump(logs.create())
-    if data["is_fraud"] == "1":
+    if result:
         subject = 'Fraud Detection Warning' 
         recipients=["adi.guntoro@ottodigital.id"]
         # msg = Message('Fraud Detection Warning', recipients=["aoi.soichiro@gmail.com"],
@@ -94,71 +131,95 @@ def before_request():
         current_user.last_seen = datetime.utcnow()
         db.session.commit()
 
+@app.route('/log/<id>/popup')
+@login_required
+def user_popup(id):
+    log = Log.query.filter_by(id=id).first_or_404()
+    return render_template('log_popup.html', log=log)
+
+
 @app.route('/search/logs', methods = ['POST'])
 def search_log():
     get_logs = Log.query
     page = int(request.form['page']) if request.form['page'] else 1
 
-    amount = request.form["amount"]
-    search_amount = "%{}%".format(amount)
-    date = request.form["date"]
-    search_date = "%{}%".format(date)
-    time = request.form["time"]
-    search_time = "%{}%".format(time)
+    id_trans = request.form["id_trans"]
+    search_id_trans = "%{}%".format(id_trans)
+    date_time = request.form["date_time"]
+    search_date_time = "%{}%".format(date_time)
+    company_id = request.form["company_id"]
+    search_company_id = "%{}%".format(company_id)
     source = request.form["source"]
     search_source = "%{}%".format(source)
     destination = request.form["destination"]
     search_destination = "%{}%".format(destination)
-    is_fraud = request.form["is_fraud"]
-    a = ['n', 'o', 't', 'N', 'O', 'T', ' ']
-    fraud = 0 if any(x in is_fraud for x in a) else 1
-    search_is_fraud = "%{}%".format(fraud)
-    fraud_type = request.form["fraud_type"]
-    search_fraud_type = "%{}%".format(fraud_type)
+    amount = request.form["amount"]
+    search_amount = "%{}%".format(amount)
+    trans_type = request.form["trans_type"]
+    search_trans_type = "%{}%".format(trans_type)
+    product_id = request.form["product_id"]
+    search_product_id = "%{}%".format(product_id)
     ip_address = request.form["ip_address"]
     search_ip_address = "%{}%".format(ip_address)
-    transaction_type = request.form["transaction_type"]
-    search_transaction_type = "%{}%".format(transaction_type)
+    ip_location = request.form["ip_location"]
+    search_ip_location = "%{}%".format(ip_location)
+    longlat = request.form["longlat"]
+    search_longlat = "%{}%".format(longlat)
+    geo_location = request.form["geo_location"]
+    search_geo_location = "%{}%".format(geo_location)
+    fraud_type = request.form["fraud_type"]
+    search_fraud_type = "%{}%".format(fraud_type)
+    fraud_point = request.form["fraud_point"]
+    search_fraud_point = "%{}%".format(fraud_point)
 
-    if amount:
-        get_logs = get_logs.filter(Log.amount.like(search_amount))
-    if date:
-        get_logs = get_logs.filter(Log.date.like(search_date))
-    if time:
-        get_logs = get_logs.filter(Log.time.like(search_time))
+    if id_trans:
+        get_logs = get_logs.filter(Log.id_trans.like(search_id_trans))
+    if date_time:
+        get_logs = get_logs.filter(func.concat(Log.date, ' ', Log.time).like(search_date_time))
+    if company_id:
+        get_logs = get_logs.filter(Log.company_id.like(search_company_id))
     if source:
         get_logs = get_logs.filter(Log.source.like(search_source))
     if destination:
         get_logs = get_logs.filter(Log.destination.like(search_destination))
-    if is_fraud:
-        get_logs = get_logs.filter(Log.is_fraud.like(search_is_fraud))
-    if fraud_type:
-        get_logs = get_logs.filter(Log.fraud_type.like(search_fraud_type))
+    if amount:
+        get_logs = get_logs.filter(Log.amount.like(search_amount))
+    if trans_type:
+        get_logs = get_logs.filter(Log.trans_type.like(search_trans_type))
+    if product_id:
+        get_logs = get_logs.filter(Log.product_id.like(search_product_id))
     if ip_address:
         get_logs = get_logs.filter(Log.ip_address.like(search_ip_address))
-    if transaction_type:
-        get_logs = get_logs.filter(Log.transaction_type.like(search_transaction_type))
+    if ip_location:
+        get_logs = get_logs.filter(func.concat(Log.ip_city, ', ', Log.ip_country).like(search_ip_location))
+    if longlat:
+        get_logs = get_logs.filter(func.concat(Log.longitude, ', ', Log.latitude).like(search_longlat))
+    if geo_location:
+        get_logs = get_logs.filter(func.concat(Log.geo_city, ', ', Log.geo_state, ', ', Log.geo_country).like(search_geo_location))
+    if fraud_type:
+        get_logs = get_logs.filter(Log.fraud_type.like(search_fraud_type))
+    if fraud_point:
+        get_logs = get_logs.filter(Log.fraud_point.like(search_fraud_point))
     
-    get_logs = get_logs.order_by(Log.id_trans.desc())
+    get_logs = get_logs.order_by(Log.id.desc())
     posts = get_logs.paginate(
         page, app.config['POSTS_PER_PAGE'], False)
     tr_log = ''
     for row in posts.items:
-        tr_row = '''<tr>
-                        <td>{0}</td>
-                        <td>{1}</td>
-                        <td>{2}</td>
-                        <td>{3}</td>
-                        <td>{4}</td>
-                        <td>{5}</td>
-                        <td>{6}</td>
-                        <td>{7}</td>
-                        <td>{8}</td>
-                        <td>{9}</td>
-                    </tr>'''
-        fraud = 'Fraud' if row.is_fraud == 1 else 'Not Fraud'
-        tr_log = tr_log + tr_row.format(row.id_trans, row.amount, row.date, row.time, row.source,
-                        row.destination, fraud, row.fraud_type, row.ip_address, row.transaction_type)
+        tr_row = '''<tr><td class="log_popup" style="cursor: pointer;">
+                    <span>{0}</span><span style="display: none;">{1}</span></td>
+                    <td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td>
+                    <td>{7}</td><td>{8}</td><td>{9}</td><td>{10}</td><td>{11}</td>
+                    <td>{12}</td><td>{13}</td><td>{14}</td></tr>'''
+
+        date_time = str(row.date) + ' ' + str(row.time)
+        ip_location = str(row.ip_city) + ', ' + str(row.ip_country)
+        longlat = str(row.longitude) + ', ' + str(row.latitude)
+        geo_location = str(row.geo_city) + ', ' + str(row.geo_state) + ', ' + str(row.geo_country)
+
+        tr_log = tr_log + tr_row.format(row.id_trans, row.id, date_time, row.company_id, row.source,
+                    row.destination, row.amount, row.trans_type, row.product_id, row.ip_address,
+                    ip_location, longlat, geo_location, row.fraud_type, row.fraud_point)
 
     next_page = posts.next_num if posts.has_next else '#'
     if next_page != '#':

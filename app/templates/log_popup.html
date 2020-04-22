@@ -1,0 +1,28 @@
+<div class='popup_quote'>
+    <h1><span id='title'>{{ log.fraud_type }}</span></h1>
+    <h3>Cause:</h3>
+    <span id='cause'>{{ log.fraud_cause|safe }}</span>
+    <br>
+    <h3>Total Fraud Point : <span id='point'>{{ log.fraud_point }}</span></h3>
+    <table align='center' style='text-align:left'>
+        <tbody>
+            <tr><th colspan='3'>Transaction Info</th></tr>
+            <tr><td style="width: 110px;">ID Trans</td><td style="width: 10px;">:</td><td>{{ log.id_trans }}</td></tr>
+            <tr><td>Date Time</td><td>:</td><td>{{ log.date }} {{ log.time }}</td></tr>
+            <tr><td>Company</td><td>:</td><td>{{ log.company_id }}</td></tr>
+            <tr><th colspan='3'>Sender</th></tr>
+            <tr><td>Phone</td><td>:</td><td>{{ log.source }}</td></tr>
+            <tr><th colspan='3'>Receiver</th></tr>
+            <tr><td>Phone</td><td>:</td><td>{{ log.destination }}</td></tr>
+            <tr><td>Amount</td><td>:</td><td>{{ log.amount }}</td></tr>
+            <tr><td>Transaction Type</td><td>:</td><td>{{ log.trans_type }}</td></tr>
+            <tr><td>Product</td><td>:</td><td>{{ log.product_id }}</td></tr>
+            <tr><th colspan='3'>Location</th></tr>
+            <tr><td>IP City</td><td>:</td><td>{{ log.ip_city }}</td></tr>
+            <tr><td>IP Country</td><td>:</td><td>{{ log.ip_country }}</td></tr>
+            <tr><td>Geo City</td><td>:</td><td>{{ log.geo_city }}</td></tr>
+            <tr><td>Geo State</td><td>:</td><td>{{ log.geo_state }}</td></tr>
+            <tr><td>Geo Country</td><td>:</td><td>{{ log.geo_country }}</td></tr>
+        </tbody>
+    </table>
+</div>
