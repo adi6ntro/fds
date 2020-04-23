@@ -39,6 +39,9 @@ def login():
         if user is None or not user.check_password(form.password.data):
             flash('Invalid username or password')
             return redirect(url_for('login'))
+        if user.is_active == 0:
+            flash('Username is not active')
+            return redirect(url_for('login'))
         login_user(user, remember=form.remember_me.data)
         next_page = request.args.get('next')
         if not next_page or url_parse(next_page).netloc != '':
@@ -57,11 +60,11 @@ def register():
         return redirect(url_for('index'))
     form = RegistrationForm()
     if form.validate_on_submit():
-        user = User(username=form.username.data, email=form.email.data)
+        user = User(username=form.username.data, email=form.email.data, fullname=form.fullname.data, is_active=0)
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
-        flash('Congratulations, you are now a registered user!')
+        flash('You have successfully registered. Please contact the administrator to activate your account!')
         return redirect(url_for('login'))
     return render_template('register.html', title='Register', form=form)
 
@@ -206,20 +209,25 @@ def search_log():
         page, app.config['POSTS_PER_PAGE'], False)
     tr_log = ''
     for row in posts.items:
-        tr_row = '''<tr><td class="log_popup" style="cursor: pointer;">
-                    <span>{0}</span><span style="display: none;">{1}</span></td>
-                    <td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>{6}</td>
+        tr_row = '''<tr><td class="log_popup2" style="cursor: pointer;">
+                    <a class="btn btn-default" href="#" data-toggle="tooltip" title="Lihat Detail">
+                    <span class="glyphicon glyphicon-search"></span></a>
+                    <span style="display: none;">{0}</span></td><td>{1}</td>
+                    <td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td><td>Rp {6}</td>
                     <td>{7}</td><td>{8}</td><td>{9}</td><td>{10}</td><td>{11}</td>
-                    <td>{12}</td><td>{13}</td><td>{14}</td></tr>'''
+                    <td>{12}</td><td>{13}</td><td>{14}</td><td class="log_popup3" style="cursor: pointer;">
+                    <a class="btn btn-default" href="#" data-toggle="tooltip" title="Lihat Detail">
+                    <span class="glyphicon glyphicon-search"></span></a>
+                    <span style="display: none;">{15}</span></td></tr>'''
 
         date_time = str(row.date) + ' ' + str(row.time)
         ip_location = str(row.ip_city) + ', ' + str(row.ip_country)
         longlat = str(row.longitude) + ', ' + str(row.latitude)
         geo_location = str(row.geo_city) + ', ' + str(row.geo_state) + ', ' + str(row.geo_country)
 
-        tr_log = tr_log + tr_row.format(row.id_trans, row.id, date_time, row.company_id, row.source,
-                    row.destination, row.amount, row.trans_type, row.product_id, row.ip_address,
-                    ip_location, longlat, geo_location, row.fraud_type, row.fraud_point)
+        tr_log = tr_log + tr_row.format(row.id, row.id_trans, date_time, row.company_id, row.source,
+                    row.destination, ("{:,}".format(int(row.amount)).replace(',', '.')), row.trans_type, row.product_id, row.ip_address,
+                    ip_location, longlat, geo_location, row.fraud_type, row.fraud_point, row.id)
 
     next_page = posts.next_num if posts.has_next else '#'
     if next_page != '#':

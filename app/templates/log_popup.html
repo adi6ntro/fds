@@ -14,7 +14,7 @@
             <tr><td>Phone</td><td>:</td><td>{{ log.source }}</td></tr>
             <tr><th colspan='3'>Receiver</th></tr>
             <tr><td>Phone</td><td>:</td><td>{{ log.destination }}</td></tr>
-            <tr><td>Amount</td><td>:</td><td>{{ log.amount }}</td></tr>
+            <tr><td>Amount</td><td>:</td><td>{{ "Rp {:,}".format(log.amount).replace(',','.') }}</td></tr>
             <tr><td>Transaction Type</td><td>:</td><td>{{ log.trans_type }}</td></tr>
             <tr><td>Product</td><td>:</td><td>{{ log.product_id }}</td></tr>
             <tr><th colspan='3'>Location</th></tr>

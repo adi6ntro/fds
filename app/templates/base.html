@@ -25,6 +25,11 @@
                     <li><a href="{{ url_for('logout') }}">Logout</a></li>
                     {% endif %}
                 </ul>
+                {% if not current_user.is_anonymous %}
+                <ul class="nav navbar-nav navbar-right">
+                    <li><a href="#">logged as: {{ current_user.username }}</a></li>
+                </ul>
+                {% endif %}
             </div>
         </div>
     </nav>
@@ -89,8 +94,57 @@
             });
         }
         $( document ).ready(function () {
+            $('[data-toggle="tooltip"]').tooltip();   
             var timer = null;
             var xhr = null;
+            $(document).on("click", ".log_popup2", function( event ) {
+                $('.log_popup2').not(this).popover('hide');
+                $('.log_popup3').not(this).popover('hide');
+                var elem = $(event.currentTarget);
+                    xhr = $.ajax(
+                        '/log/' + elem.find('span').text().trim() + '/popup').done(
+                            function(data) {
+                                xhr = null;
+                                elem.popover({
+                                    trigger: 'manual',
+                                    html: true,
+                                    animation: false,
+                                    container: 'body',
+                                    content: data,
+                                    title: function() {
+                                       return 'Detail Info: <a href="#" class="close" data-dismiss="alert">×</a>'
+                                    }
+                                }).popover('show');
+                                flask_moment_render_all();
+                            }
+                        );
+            });
+            $(document).on("click", ".log_popup3", function( event ) {
+                $('.log_popup2').not(this).popover('hide');
+                $('.log_popup3').not(this).popover('hide');
+                var elem = $(event.currentTarget);
+                    xhr = $.ajax(
+                        '/log/' + elem.find('span').text().trim() + '/popup').done(
+                            function(data) {
+                                xhr = null;
+                                elem.popover({
+                                    trigger: 'manual',
+                                    placement: 'left',
+                                    html: true,
+                                    animation: false,
+                                    container: 'body',
+                                    content: data,
+                                    title: function() {
+                                       return 'Detail Info: <a href="#" class="close" data-dismiss="alert">×</a>'
+                                    }
+                                }).popover('show');
+                                flask_moment_render_all();
+                            }
+                        );
+            });
+            $(document).on("click", ".popover .close", function( event ) {
+                $(this).parents(".popover").popover('hide');
+            });
             $("#tr_log").on('mouseenter', '.log_popup', function( event ) {
                 // mouse in event handler
                 var elem = $(event.currentTarget);
@@ -106,7 +160,9 @@
                                     animation: false,
                                     container: 'body',
                                     content: data,
-                                    template: '<div class="popover popover-medium"><div class="arrow"></div><div class="popover-inner"><h3 class="popover-title"></h3><div class="popover-content"><p></p></div></div></div>'
+                                    title: function() {
+                                       return 'Detail Info: <a href="#" class="close" data-dismiss="alert">×</a>'
+                                    }
                                 }).popover('show');
                                 flask_moment_render_all();
                             }

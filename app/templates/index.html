@@ -23,12 +23,15 @@
                     <table id="table_log" class="table table-hover table-striped">
                         <thead>
                             <tr>
+                                <th></th>
                                 <th colspan="4">Transaction Info</th>
                                 <th colspan="4">Receiver</th>
                                 <th colspan="4">Location</th>
                                 <th colspan="2">Fraud Status</th>
+                                <th></th>
                             </tr>
                             <tr>
+                                <th></th>
                                 <th style="min-width: 100px;">ID Trans</th>
                                 <th style="min-width: 100px;">Datetime</th>
                                 <th style="min-width: 150px;">Company ID</th>
@@ -43,8 +46,10 @@
                                 <th style="min-width: 150px;">Geo Location</th>
                                 <th style="min-width: 100px;">Type</th>
                                 <th style="min-width: 100px;">Point</th>
+                                <th></th>
                             </tr>
                             <tr>
+                                <th></th>
                                 <th><input class="form-control" id="id_trans" name="id_trans" type="text" onkeyup="search_log()"></th>
                                 <th><input class="form-control" id="date-time" name="date-time" type="text" onkeyup="search_log()"></th>
                                 <th><input class="form-control" id="company_id" name="company_id" type="text" onkeyup="search_log()"></th>
@@ -59,20 +64,24 @@
                                 <th><input class="form-control" id="geo_location" name="geo_location" type="text" onkeyup="search_log()"></th>
                                 <th><input class="form-control" id="fraud_type" name="fraud_type" type="text" onkeyup="search_log()"></th>
                                 <th><input class="form-control" id="fraud_point" name="fraud_point" type="text" onkeyup="search_log()"></th>
+                                <th></th>
                             </tr>
                         </thead>
                         <tbody id="tr_log">
                             {% for row in logs %}
                             <tr>
-                                <td class="log_popup" style="cursor: pointer;">
-                                    <span>{{row.id_trans}}</span>
+                                <td class="log_popup2" style="cursor: pointer;">
+                                    <a class="btn btn-default" href="#" data-toggle="tooltip" title="Lihat Detail">
+                                        <span class="glyphicon glyphicon-search"></span>
+                                    </a>
                                     <span style="display: none;">{{row.id}}</span>
                                 </td>
+                                <td>{{row.id_trans}}</td>
                                 <td>{{row.date}} {{row.time}}</td>
                                 <td>{{row.company_id}}</td>
                                 <td>{{row.source}}</td>
                                 <td>{{row.destination}}</td>
-                                <td>{{row.amount}}</td>
+                                <td>{{"Rp {:,}".format(row.amount).replace(',','.')}}</td>
                                 <td>{{row.trans_type}}</td>
                                 <td>{{row.product_id}}</td>
                                 <td>{{row.ip_address}}</td>
@@ -81,6 +90,12 @@
                                 <td>{{row.geo_city}}, {{row.geo_state}}, {{row.geo_country}}</td>
                                 <td>{{row.fraud_type}}</td>
                                 <td>{{row.fraud_point}}</td>
+                                <td class="log_popup3" style="cursor: pointer;">
+                                    <a class="btn btn-default" href="#" data-toggle="tooltip" title="Lihat Detail">
+                                        <span class="glyphicon glyphicon-search"></span>
+                                    </a>
+                                    <span style="display: none;">{{row.id}}</span>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
