@@ -49,6 +49,16 @@ def login():
         return redirect(next_page)
     return render_template('login.html', title='Sign In', form=form)
 
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    data = request.get_json()
+    user = User.query.filter_by(username=data["username"]).first()
+    if user is None or not user.check_password(data["password"]):
+        result = 'Invalid username or password'
+    else:
+        result = 'success'
+    return make_response(jsonify({"user": {"id": user.id,"fullname": user.fullname,"username": user.username,"email": user.email}}),200)
+
 @app.route('/logout')
 def logout():
     logout_user()
